@@ -67,7 +67,8 @@ def target_page(html):
 
 # gets faculty name from the h1
 def extract_faculty_name(html):
-    return BeautifulSoup(html, "html.parser").find("h1").get_text(strip=True)
+    name = BeautifulSoup(html, "html.parser").find("h1").get_text(" ", strip=True)
+    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
 
 
 # finds valid cpp.edu links on a page
@@ -116,10 +117,16 @@ def crawler(seed, num_targets):
 # gets text of the sections below the header
 def extract_content(html):
     soup = BeautifulSoup(html, "html.parser")
-    parts = []
+    parts, used = [], set()
     for h2 in soup.find_all("h2"):
         title = h2.get_text(strip=True)
         if title.lower() in HEADER_H2:
+            continue
+        box = h2.find_parent("div", class_="section-intro")
+        if box is not None:
+            if id(box) not in used:
+                used.add(id(box))
+                parts.append(box.get_text(" ", strip=True))
             continue
         parts.append(title)
         for sib in h2.find_next_siblings():
